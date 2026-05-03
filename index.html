@@ -2,180 +2,112 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Tangkap Angka</title>
+<title>Neon Dodge</title>
 <style>
-  body {
-    text-align: center;
-    font-family: Arial;
-    background: #111;
-    color: white;
-  }
-  #gameArea {
-    width: 300px;
-    height: 300px;
-    margin: 20px auto;
-    position: relative;
-    background: #222;
-    border: 2px solid #fff;
-  }
-  .target {
-    position: absolute;
-    background: yellow;
-    color: black;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-weight: bold;
-  }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: black;
+  font-family: Arial;
+  color: white;
+}
+
+#player {
+  width: 50px;
+  height: 50px;
+  background: cyan;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 20px cyan;
+}
+
+.enemy {
+  width: 40px;
+  height: 40px;
+  background: red;
+  position: absolute;
+  top: 0;
+  box-shadow: 0 0 15px red;
+}
+
+#score {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 20px;
+}
 </style>
 </head>
 <body>
 
-<h1>🎮 Tangkap Angka</h1>
-<p>Skor: <span id="score">0</span></p>
-<p>Waktu: <span id="time">20</span> detik</p>
-<button onclick="startGame()">Mulai Game</button>
-
-<div id="gameArea"></div>
+<div id="score">Skor: 0</div>
+<div id="player"></div>
 
 <script>
+let player = document.getElementById("player");
 let score = 0;
-let time = 20;
-let gameInterval;
-let spawnInterval;
+let speed = 3;
+let gameOver = false;
 
-function startGame() {
-  score = 0;
-  time = 20;
-  document.getElementById("score").innerText = score;
-  document.getElementById("time").innerText = time;
-  document.getElementById("gameArea").innerHTML = "";
+// kontrol kiri kanan
+document.addEventListener("keydown", (e) => {
+  let left = player.offsetLeft;
 
-  gameInterval = setInterval(() => {
-    time--;
-    document.getElementById("time").innerText = time;
+  if (e.key === "ArrowLeft" && left > 0) {
+    player.style.left = left - 20 + "px";
+  }
 
-    if (time <= 0) {
-      clearInterval(gameInterval);
-      clearInterval(spawnInterval);
-      alert("Game selesai! Skor kamu: " + score);
+  if (e.key === "ArrowRight" && left < window.innerWidth - 50) {
+    player.style.left = left + 20 + "px";
+  }
+});
+
+// spawn musuh
+function spawnEnemy() {
+  if (gameOver) return;
+
+  let enemy = document.createElement("div");
+  enemy.classList.add("enemy");
+  enemy.style.left = Math.random() * (window.innerWidth - 40) + "px";
+
+  document.body.appendChild(enemy);
+
+  let fall = setInterval(() => {
+    let top = enemy.offsetTop;
+    enemy.style.top = top + speed + "px";
+
+    // collision
+    let playerRect = player.getBoundingClientRect();
+    let enemyRect = enemy.getBoundingClientRect();
+
+    if (
+      enemyRect.bottom > playerRect.top &&
+      enemyRect.top < playerRect.bottom &&
+      enemyRect.left < playerRect.right &&
+      enemyRect.right > playerRect.left
+    ) {
+      gameOver = true;
+      alert("💀 Game Over! Skor kamu: " + score);
+      location.reload();
     }
-  }, 1000);
 
-  spawnInterval = setInterval(spawnTarget, 800);
+    if (top > window.innerHeight) {
+      enemy.remove();
+      clearInterval(fall);
+      score++;
+      document.getElementById("score").innerText = "Skor: " + score;
+
+      // makin lama makin cepat
+      if (score % 5 === 0) speed += 1;
+    }
+  }, 20);
 }
 
-function spawnTarget() {
-  const gameArea = document.getElementById("gameArea");
-
-  const target = document.createElement("div");
-  target.classList.add("target");
-  target.innerText = Math.floor(Math.random() * 10);
-
-  target.style.top = Math.random() * 250 + "px";
-  target.style.left = Math.random() * 250 + "px";
-
-  target.onclick = () => {
-    score++;
-    document.getElementById("score").innerText = score;
-    target.remove();
-  };
-
-  gameArea.appendChild(target);
-
-  setTimeout(() => {
-    if (target.parentNode) target.remove();
-  }, 1000);
-}
+// loop spawn
+setInterval(spawnEnemy, 800);
 </script>
 
-<script>
-let score = 0;
-let time = 20;
-let gameInterval;
-let spawnInterval;
-
-// 🔊 Sound pakai Web Audio (tanpa file)
-function playClickSound() {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = ctx.createOscillator();
-  const gain = ctx.createGain();
-
-  oscillator.type = "square";
-  oscillator.frequency.setValueAtTime(600, ctx.currentTime);
-
-  gain.gain.setValueAtTime(0.2, ctx.currentTime);
-
-  oscillator.connect(gain);
-  gain.connect(ctx.destination);
-
-  oscillator.start();
-  oscillator.stop(ctx.currentTime + 0.1);
-}
-
-function playGameOverSound() {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = ctx.createOscillator();
-  const gain = ctx.createGain();
-
-  oscillator.type = "sawtooth";
-  oscillator.frequency.setValueAtTime(200, ctx.currentTime);
-
-  gain.gain.setValueAtTime(0.3, ctx.currentTime);
-
-  oscillator.connect(gain);
-  gain.connect(ctx.destination);
-
-  oscillator.start();
-  oscillator.stop(ctx.currentTime + 0.5);
-}
-
-function startGame() {
-  score = 0;
-  time = 20;
-  document.getElementById("score").innerText = score;
-  document.getElementById("time").innerText = time;
-  document.getElementById("gameArea").innerHTML = "";
-
-  gameInterval = setInterval(() => {
-    time--;
-    document.getElementById("time").innerText = time;
-
-    if (time <= 0) {
-      clearInterval(gameInterval);
-      clearInterval(spawnInterval);
-      playGameOverSound(); // 🔊 suara kalah
-      alert("Game selesai! Skor kamu: " + score);
-    }
-  }, 1000);
-
-  spawnInterval = setInterval(spawnTarget, 800);
-}
-
-function spawnTarget() {
-  const gameArea = document.getElementById("gameArea");
-
-  const target = document.createElement("div");
-  target.classList.add("target");
-  target.innerText = Math.floor(Math.random() * 10);
-
-  target.style.top = Math.random() * 250 + "px";
-  target.style.left = Math.random() * 250 + "px";
-
-  target.onclick = () => {
-    score++;
-    document.getElementById("score").innerText = score;
-    playClickSound(); // 🔊 suara klik
-    target.remove();
-  };
-
-  gameArea.appendChild(target);
-
-  setTimeout(() => {
-    if (target.parentNode) target.remove();
-  }, 1000);
-}
-</script>
-  
 </body>
-  </html>
+</html>
