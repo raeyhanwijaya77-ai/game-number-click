@@ -2,14 +2,14 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Neon Dodge</title>
+<title>Sky War Jet</title>
 <style>
 body {
   margin: 0;
   overflow: hidden;
   background: black;
-  font-family: Arial;
   color: white;
+  font-family: Arial;
 }
 
 #player {
@@ -32,11 +32,17 @@ body {
   box-shadow: 0 0 15px red;
 }
 
+.bullet {
+  width: 5px;
+  height: 15px;
+  background: yellow;
+  position: absolute;
+}
+
 #score {
   position: absolute;
   top: 10px;
   left: 10px;
-  font-size: 20px;
 }
 </style>
 </head>
@@ -48,23 +54,64 @@ body {
 <script>
 let player = document.getElementById("player");
 let score = 0;
-let speed = 3;
 let gameOver = false;
 
-// kontrol kiri kanan
+// kontrol
 document.addEventListener("keydown", (e) => {
   let left = player.offsetLeft;
 
   if (e.key === "ArrowLeft" && left > 0) {
-    player.style.left = left - 20 + "px";
+    player.style.left = left - 25 + "px";
   }
 
   if (e.key === "ArrowRight" && left < window.innerWidth - 50) {
-    player.style.left = left + 20 + "px";
+    player.style.left = left + 25 + "px";
   }
+
+  if (e.key === " ") shoot();
 });
 
-// spawn musuh
+// tembak
+function shoot() {
+  let bullet = document.createElement("div");
+  bullet.classList.add("bullet");
+
+  bullet.style.left = player.offsetLeft + 22 + "px";
+  bullet.style.top = player.offsetTop + "px";
+
+  document.body.appendChild(bullet);
+
+  let move = setInterval(() => {
+    bullet.style.top = bullet.offsetTop - 10 + "px";
+
+    if (bullet.offsetTop < 0) {
+      bullet.remove();
+      clearInterval(move);
+    }
+
+    // kena musuh
+    document.querySelectorAll(".enemy").forEach(enemy => {
+      let b = bullet.getBoundingClientRect();
+      let e = enemy.getBoundingClientRect();
+
+      if (
+        b.top < e.bottom &&
+        b.bottom > e.top &&
+        b.left < e.right &&
+        b.right > e.left
+      ) {
+        enemy.remove();
+        bullet.remove();
+        clearInterval(move);
+        score++;
+        document.getElementById("score").innerText = "Skor: " + score;
+      }
+    });
+
+  }, 20);
+}
+
+// musuh
 function spawnEnemy() {
   if (gameOver) return;
 
@@ -75,38 +122,31 @@ function spawnEnemy() {
   document.body.appendChild(enemy);
 
   let fall = setInterval(() => {
-    let top = enemy.offsetTop;
-    enemy.style.top = top + speed + "px";
+    enemy.style.top = enemy.offsetTop + 4 + "px";
 
-    // collision
-    let playerRect = player.getBoundingClientRect();
-    let enemyRect = enemy.getBoundingClientRect();
+    let p = player.getBoundingClientRect();
+    let e = enemy.getBoundingClientRect();
 
     if (
-      enemyRect.bottom > playerRect.top &&
-      enemyRect.top < playerRect.bottom &&
-      enemyRect.left < playerRect.right &&
-      enemyRect.right > playerRect.left
+      e.bottom > p.top &&
+      e.top < p.bottom &&
+      e.left < p.right &&
+      e.right > p.left
     ) {
       gameOver = true;
-      alert("💀 Game Over! Skor kamu: " + score);
+      alert("💀 Game Over! Skor: " + score);
       location.reload();
     }
 
-    if (top > window.innerHeight) {
+    if (enemy.offsetTop > window.innerHeight) {
       enemy.remove();
       clearInterval(fall);
-      score++;
-      document.getElementById("score").innerText = "Skor: " + score;
-
-      // makin lama makin cepat
-      if (score % 5 === 0) speed += 1;
     }
   }, 20);
 }
 
-// loop spawn
-setInterval(spawnEnemy, 800);
+// spawn terus
+setInterval(spawnEnemy, 900);
 </script>
 
 </body>
